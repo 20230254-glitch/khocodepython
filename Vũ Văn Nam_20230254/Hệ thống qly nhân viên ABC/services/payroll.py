@@ -1,17 +1,46 @@
 def total_salary(employees):
+    if not employees:
+        return 0
+
     return sum(e.calculate_salary() for e in employees)
 
+
 def top_3_salary(employees):
-    return sorted(employees, key=lambda e: e.calculate_salary(), reverse=True)[:3]
+    if not employees:
+        return []
+
+    return sorted(
+        employees,
+        key=lambda e: e.calculate_salary(),
+        reverse=True
+    )[:3]
+
 
 def count_by_type(employees):
-    result = {}
+    result = {
+        "Manager": 0,
+        "Developer": 0,
+        "Intern": 0
+    }
+
     for e in employees:
         t = e.__class__.__name__
-        result[t] = result.get(t, 0) + 1
+        if t in result:
+            result[t] += 1
+        else:
+            result[t] = 1  # phòng trường hợp thêm loại mới
+
     return result
+
 
 def avg_projects(employees):
     if not employees:
         return 0
-    return sum(len(e.projects) for e in employees) / len(employees)
+
+    total_projects = 0
+
+    for e in employees:
+      
+        total_projects += len(getattr(e, "projects", []))
+
+    return total_projects / len(employees)

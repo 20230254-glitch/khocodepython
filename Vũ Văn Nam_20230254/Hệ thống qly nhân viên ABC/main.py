@@ -1,7 +1,5 @@
-from models.manager import Manager
-from models.developer import Developer
-from models.intern import Intern
-from services.company import Company
+from models import Manager, Developer, Intern
+from services import Company
 from services.payroll import *
 from utils.validators import *
 
@@ -33,7 +31,7 @@ def add_employee():
             emp = Intern(emp_id, name, age, email, salary)
 
         company.add_employee(emp)
-        print("✔ Thêm thành công")
+        print("✔ Thêm thành công:", emp)
 
     except Exception as e:
         print("❌ Lỗi:", e)
@@ -47,7 +45,7 @@ def show_menu():
     try:
         if choice == "a":
             for e in company.get_all():
-                print(e, e.calculate_salary())
+                print(e, "| Lương:", e.calculate_salary())
 
         elif choice == "b":
             t = input("Nhập loại (Manager/Developer/Intern): ")
@@ -58,7 +56,7 @@ def show_menu():
         elif choice == "c":
             sorted_list = sorted(company.employees, key=lambda x: x.performance, reverse=True)
             for e in sorted_list:
-                print(e, "Điểm:", e.performance)
+                print(e, "| Điểm:", e.performance)
 
     except Exception as e:
         print(e)
@@ -95,14 +93,14 @@ def salary_menu():
 
     if choice == "a":
         for e in company.employees:
-            print(e, e.calculate_salary())
+            print(e, "| Lương:", e.calculate_salary())
 
     elif choice == "b":
         print("Tổng:", total_salary(company.employees))
 
     elif choice == "c":
         for e in top_3_salary(company.employees):
-            print(e, e.calculate_salary())
+            print(e, "|", e.calculate_salary())
 
 
 # ================== 5. DỰ ÁN ==================
@@ -123,7 +121,7 @@ def project_menu():
 
         elif choice == "c":
             emp = company.find_by_id(emp_id)
-            print(emp.projects)
+            print("Dự án:", emp.projects)
 
     except Exception as e:
         print(e)
@@ -169,6 +167,7 @@ def hr_menu():
             emp = company.find_by_id(emp_id)
             inc = float(input("Tăng thêm: "))
             emp.base_salary += inc
+            print("✔ Đã tăng lương")
 
         elif choice == "c":
             company.promote(emp_id)

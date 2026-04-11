@@ -1,10 +1,8 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 
-from models.manager import Manager
-from models.developer import Developer
-from models.intern import Intern
-from services.company import Company
+from models import Manager, Developer, Intern
+from services import Company
 from services.payroll import *
 
 company = Company()
@@ -24,32 +22,20 @@ notebook.add(tab1, text="Nhân viên")
 frame = tk.Frame(tab1)
 frame.pack()
 
-entry_id = tk.Entry(frame)
-entry_name = tk.Entry(frame)
-entry_age = tk.Entry(frame)
-entry_email = tk.Entry(frame)
-entry_salary = tk.Entry(frame)
+labels = ["ID", "Tên", "Tuổi", "Email", "Lương", "Loại"]
+entries = []
+
+for i, text in enumerate(labels):
+    tk.Label(frame, text=text).grid(row=i, column=0)
+    entry = tk.Entry(frame)
+    entry.grid(row=i, column=1)
+    entries.append(entry)
+
+entry_id, entry_name, entry_age, entry_email, entry_salary, _ = entries
 
 combo = ttk.Combobox(frame, values=["Manager", "Developer", "Intern"])
-combo.current(0)
-
-tk.Label(frame, text="ID").grid(row=0, column=0)
-entry_id.grid(row=0, column=1)
-
-tk.Label(frame, text="Tên").grid(row=1, column=0)
-entry_name.grid(row=1, column=1)
-
-tk.Label(frame, text="Tuổi").grid(row=2, column=0)
-entry_age.grid(row=2, column=1)
-
-tk.Label(frame, text="Email").grid(row=3, column=0)
-entry_email.grid(row=3, column=1)
-
-tk.Label(frame, text="Lương").grid(row=4, column=0)
-entry_salary.grid(row=4, column=1)
-
-tk.Label(frame, text="Loại").grid(row=5, column=0)
 combo.grid(row=5, column=1)
+combo.current(0)
 
 columns = ("ID", "Tên", "Loại", "Lương")
 tree = ttk.Treeview(tab1, columns=columns, show="headings")
@@ -57,33 +43,59 @@ for col in columns:
     tree.heading(col, text=col)
 tree.pack(fill="both", expand=True)
 
+
 def refresh():
     tree.delete(*tree.get_children())
     for e in company.employees:
-        tree.insert("", "end", values=(e.emp_id, e.name, e.__class__.__name__, e.calculate_salary()))
+        tree.insert("", "end", values=(
+            e.emp_id,
+            e.name,
+            e.__class__.__name__,
+            f"{e.calculate_salary():,.0f} VNĐ"
+        ))
+
 
 def add_emp():
     try:
+        emp_id = entry_id.get().strip()
+        name = entry_name.get().strip()
+        age = int(entry_age.get())
+        email = entry_email.get().strip()
+        salary = float(entry_salary.get())
+
+        if not emp_id or not name:
+            raise ValueError("Thiếu dữ liệu")
+
         if combo.get() == "Manager":
-            emp = Manager(entry_id.get(), entry_name.get(), int(entry_age.get()), entry_email.get(), float(entry_salary.get()))
+            emp = Manager(emp_id, name, age, email, salary)
         elif combo.get() == "Developer":
-            emp = Developer(entry_id.get(), entry_name.get(), int(entry_age.get()), entry_email.get(), float(entry_salary.get()), "Python")
+            emp = Developer(emp_id, name, age, email, salary, "Python")
         else:
-            emp = Intern(entry_id.get(), entry_name.get(), int(entry_age.get()), entry_email.get(), float(entry_salary.get()))
+            emp = Intern(emp_id, name, age, email, salary)
 
         company.add_employee(emp)
         refresh()
+        messagebox.showinfo("OK", "Thêm thành công")
+
     except Exception as e:
         messagebox.showerror("Lỗi", str(e))
 
+
 def delete_emp():
     try:
-        item = tree.selection()[0]
-        emp_id = tree.item(item)["values"][0]
+        selected = tree.selection()
+        if not selected:
+            messagebox.showwarning("Chọn", "Chọn nhân viên")
+            return
+
+        emp_id = str(tree.item(selected[0])["values"][0]).strip()
         company.remove_employee(emp_id)
         refresh()
-    except:
-        pass
+        messagebox.showinfo("OK", "Đã xóa")
+
+    except Exception as e:
+        messagebox.showerror("Lỗi", str(e))
+
 
 tk.Button(tab1, text="Thêm", command=add_emp).pack(side="left", padx=10)
 tk.Button(tab1, text="Xóa", command=delete_emp).pack(side="left")
@@ -92,14 +104,29 @@ tk.Button(tab1, text="Xóa", command=delete_emp).pack(side="left")
 tab2 = tk.Frame(notebook)
 notebook.add(tab2, text="Tìm kiếm")
 
+tk.Label(tab2, text="Nhập tên").pack()
 search_entry = tk.Entry(tab2)
 search_entry.pack()
 
+search_tree = ttk.Treeview(tab2, columns=columns, show="headings")
+for col in columns:
+    search_tree.heading(col, text=col)
+search_tree.pack(fill="both", expand=True)
+
+
 def search():
-    tree.delete(*tree.get_children())
+    search_tree.delete(*search_tree.get_children())
+    keyword = search_entry.get().strip().lower()
+
     for e in company.employees:
-        if search_entry.get().lower() in e.name.lower():
-            tree.insert("", "end", values=(e.emp_id, e.name, e.__class__.__name__, e.calculate_salary()))
+        if keyword in e.name.lower():
+            search_tree.insert("", "end", values=(
+                e.emp_id,
+                e.name,
+                e.__class__.__name__,
+                f"{e.calculate_salary():,.0f} VNĐ"
+            ))
+
 
 tk.Button(tab2, text="Tìm", command=search).pack()
 
@@ -107,13 +134,25 @@ tk.Button(tab2, text="Tìm", command=search).pack()
 tab3 = tk.Frame(notebook)
 notebook.add(tab3, text="Lương")
 
+
 def show_total():
-    messagebox.showinfo("Tổng lương", str(total_salary(company.employees)))
+    total = total_salary(company.employees)
+    messagebox.showinfo("Tổng lương", f"{total:,.0f} VNĐ")
+
 
 def show_top3():
     top = top_3_salary(company.employees)
-    msg = "\n".join([f"{e.name}: {e.calculate_salary()}" for e in top])
-    messagebox.showinfo("Top 3", msg)
+
+    if not top:
+        messagebox.showwarning("Thông báo", "Chưa có dữ liệu")
+        return
+
+    msg = "\n".join(
+        [f"{e.name}: {e.calculate_salary():,.0f} VNĐ" for e in top]
+    )
+
+    messagebox.showinfo("Top 3 lương", msg)
+
 
 tk.Button(tab3, text="Tổng lương", command=show_total).pack()
 tk.Button(tab3, text="Top 3", command=show_top3).pack()
@@ -122,29 +161,83 @@ tk.Button(tab3, text="Top 3", command=show_top3).pack()
 tab4 = tk.Frame(notebook)
 notebook.add(tab4, text="Dự án")
 
+tk.Label(tab4, text="ID nhân viên").pack()
 entry_proj_id = tk.Entry(tab4)
-entry_proj = tk.Entry(tab4)
-
 entry_proj_id.pack()
+
+tk.Label(tab4, text="Tên dự án").pack()
+entry_proj = tk.Entry(tab4)
 entry_proj.pack()
 
-def add_proj():
-    company.assign_project(entry_proj_id.get(), entry_proj.get())
+proj_list = tk.Listbox(tab4)
+proj_list.pack(fill="both", expand=True)
 
-tk.Button(tab4, text="Thêm dự án", command=add_proj).pack()
+
+def load_projects():
+    try:
+        emp = company.find_by_id(entry_proj_id.get().strip())
+        proj_list.delete(0, tk.END)
+        for p in emp.projects:
+            proj_list.insert(tk.END, p)
+    except Exception as e:
+        messagebox.showerror("Lỗi", str(e))
+
+
+def add_proj():
+    try:
+        company.assign_project(entry_proj_id.get().strip(), entry_proj.get().strip())
+        load_projects()
+        messagebox.showinfo("OK", "Đã thêm dự án")
+    except Exception as e:
+        messagebox.showerror("Lỗi", str(e))
+
+
+def remove_proj():
+    try:
+        emp_id = entry_proj_id.get().strip()
+        selected = proj_list.curselection()
+
+        if not selected:
+            messagebox.showwarning("Chọn", "Chọn dự án")
+            return
+
+        project = proj_list.get(selected[0])
+        company.remove_project(emp_id, project)
+        load_projects()
+    except Exception as e:
+        messagebox.showerror("Lỗi", str(e))
+
+
+tk.Button(tab4, text="Xem", command=load_projects).pack()
+tk.Button(tab4, text="Thêm", command=add_proj).pack()
+tk.Button(tab4, text="Xóa", command=remove_proj).pack()
 
 # ================= TAB 5: HIỆU SUẤT =================
 tab5 = tk.Frame(notebook)
 notebook.add(tab5, text="Hiệu suất")
 
+tk.Label(tab5, text="ID").pack()
 entry_perf_id = tk.Entry(tab5)
-entry_perf = tk.Entry(tab5)
-
 entry_perf_id.pack()
+
+tk.Label(tab5, text="Điểm (0-10)").pack()
+entry_perf = tk.Entry(tab5)
 entry_perf.pack()
 
+
 def update_perf():
-    company.update_performance(entry_perf_id.get(), float(entry_perf.get()))
+    try:
+        score = float(entry_perf.get())
+
+        if score < 0 or score > 10:
+            raise ValueError("Điểm phải từ 0-10")
+
+        company.update_performance(entry_perf_id.get().strip(), score)
+        refresh()
+        messagebox.showinfo("OK", "Đã cập nhật")
+    except Exception as e:
+        messagebox.showerror("Lỗi", str(e))
+
 
 tk.Button(tab5, text="Cập nhật", command=update_perf).pack()
 
@@ -152,21 +245,60 @@ tk.Button(tab5, text="Cập nhật", command=update_perf).pack()
 tab6 = tk.Frame(notebook)
 notebook.add(tab6, text="Nhân sự")
 
+tk.Label(tab6, text="ID nhân viên").pack()
 entry_hr = tk.Entry(tab6)
 entry_hr.pack()
 
+
 def promote():
-    company.promote(entry_hr.get())
+    try:
+        company.promote(entry_hr.get().strip())
+        refresh()
+        messagebox.showinfo("OK", "Thăng chức thành công")
+    except Exception as e:
+        messagebox.showerror("Lỗi", str(e))
+
+
+def remove_emp_hr():
+    try:
+        company.remove_employee(entry_hr.get().strip())
+        refresh()
+        messagebox.showinfo("OK", "Đã xóa nhân viên")
+    except Exception as e:
+        messagebox.showerror("Lỗi", str(e))
+
 
 tk.Button(tab6, text="Thăng chức", command=promote).pack()
+tk.Button(tab6, text="Xóa NV", command=remove_emp_hr).pack()
 
 # ================= TAB 7: THỐNG KÊ =================
 tab7 = tk.Frame(notebook)
 notebook.add(tab7, text="Thống kê")
 
+
 def stats():
-    msg = str(count_by_type(company.employees))
-    messagebox.showinfo("Thống kê", msg)
+    try:
+        if not company.employees:
+            messagebox.showwarning("Thông báo", "Chưa có dữ liệu")
+            return
+
+        count = count_by_type(company.employees)
+        total = total_salary(company.employees)
+        avg = avg_projects(company.employees)
+
+        msg = f"""
+Manager: {count.get('Manager',0)}
+Developer: {count.get('Developer',0)}
+Intern: {count.get('Intern',0)}
+
+Tổng lương: {total:,.0f} VNĐ
+TB dự án: {avg:.2f}
+"""
+        messagebox.showinfo("Thống kê", msg)
+
+    except Exception as e:
+        messagebox.showerror("Lỗi", str(e))
+
 
 tk.Button(tab7, text="Xem thống kê", command=stats).pack()
 
