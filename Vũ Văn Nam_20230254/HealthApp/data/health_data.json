@@ -1,0 +1,58 @@
+[
+    {
+        "weight": 54.0,
+        "height": 165.0,
+        "bmi": 19.83,
+        "heart_rate": 90,
+        "co2": 10
+    },
+    {
+        "weight": 54.0,
+        "height": 160.0,
+        "bmi": 21.09,
+        "heart_rate": 88,
+        "co2": 20
+    },
+    {
+        "weight": 20.0,
+        "height": 160.0,
+        "bmi": 7.81,
+        "heart_rate": 56,
+        "co2": 1000
+    },
+    {
+        "weight": 14.0,
+        "height": 160.0,
+        "bmi": 5.47,
+        "heart_rate": 56,
+        "co2": 10000
+    },
+    {
+        "weight": 17.0,
+        "height": 167.0,
+        "bmi": 6.1,
+        "heart_rate": 30,
+        "co2": 1002
+    },
+    {
+        "weight": 60.0,
+        "height": 170.0,
+        "bmi": 20.76,
+        "heart_rate": 89,
+        "co2": 23
+    },
+    {
+        "weight": 168.0,
+        "height": 170.0,
+        "bmi": 58.13,
+        "heart_rate": 85,
+        "co2": 10
+    },
+    {
+        "weight": 173.0,
+        "height": 72.0,
+        "bmi": 333.72,
+        "heart_rate": 90,
+        "co2": 30
+    }
+]
